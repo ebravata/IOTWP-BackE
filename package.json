@@ -1,0 +1,23 @@
+{
+  "name": "node-influxdb",
+  "version": "1.0.0",
+  "description": "pruebas de conexion con CalZeus",
+  "main": "index.js",
+  "scripts": {
+    "start:dev": "nodemon app.js",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "influxdb",
+    "node"
+  ],
+  "author": "EBC",
+  "license": "MIT",
+  "dependencies": {
+    "@influxdata/influxdb-client": "^1.24.0",
+    "body-parser": "^1.19.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3"
+  }
+}

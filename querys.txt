@@ -1,0 +1,14 @@
+
+from(bucket: "calzeus") 
+    |> range(start: 0)
+    |> filter(fn: (r) => r._measurement == "tempower_test")
+    |> group(columns: ["serial_number", "model", "station"])
+    |> distinct(column: "serial_number")
+    |> group()// 
+    |> map(fn: (r) => ({r with _value: r._value +"_"+ r.model}))
+
+// Opcionales | Dejar para luego
+    |> filter(fn: (r) => r.station == "666")
+    |> filter(fn: (r) => r.model == "WRS588FIHZ04")
+    |> filter(fn: (r) => r.serial_number == "HRA2078811")
+
