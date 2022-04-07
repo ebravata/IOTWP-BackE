@@ -163,7 +163,7 @@ const getTestsSearch = async ( req, res ) => {
   //                         join(tables: {key1: tb_last, key2: tb_first}, on: ["serial_number", "model", "station"], method: "inner")
   //                         |> filter(fn: (r) => r.station == "600")
   //                   `
-  console.log(query)
+  // console.log(query)
 
   await queryApi.queryRows(query, {
     next(row, tableMeta) {
