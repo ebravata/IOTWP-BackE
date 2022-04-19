@@ -27,6 +27,11 @@ app.use(cors())
 // rutas
 app.use ('/api', require('./routes/routes'));
 
+
+app.get('*', (req, res) => {
+  res.sendFile( path.resolve (__dirname, 'public/index.html'))
+});
+
 app.listen(app.get('port'), () => {
       console.log(`Listening on ${app.get('port')}.`);
     });
