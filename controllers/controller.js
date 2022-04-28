@@ -85,9 +85,14 @@ const getData = async (req, res) => {
 
 const getTests = async ( req, res ) => {
   const table= []
+
+  const today= new Date();
+
+  console.log(today);
+  
   
   const query = `tb_first = from(bucket: "calzeus")
-                          |> range(start: 2000-01-01)
+                          |> range(start: 2021-12-10T23:59:59Z, stop: now())
                           |> filter(fn: (r) => r._measurement == "tempower_test")
                           |> group(columns: ["serial_number", "model", "station"])
                           |> first() // use _value
@@ -95,7 +100,7 @@ const getTests = async ( req, res ) => {
                           |> keep(columns: ["serial_number", "model", "station", "range_start"])
                           
                           tb_last = from(bucket: "calzeus")
-                          |> range(start: 2000-01-01)
+                          |> range(start: 2021-12-10T23:59:59Z, stop: now())
                           |> filter(fn: (r) => r._measurement == "tempower_test")
                           |> group(columns: ["serial_number", "model", "station"])
                           |> last()
@@ -104,33 +109,45 @@ const getTests = async ( req, res ) => {
                           
                           join(tables: {key1: tb_last, key2: tb_first}, on: ["serial_number", "model", "station"], method: "inner")
                     `
+  // try {
+
+    await queryApi.queryRows(query, {
+      next(row, tableMeta) {
+     
+          const result = tableMeta.toObject(row)
+          table.push( result )
   
-  await queryApi.queryRows(query, {
-    next(row, tableMeta) {
-   
-        const result = tableMeta.toObject(row)
-        table.push( result )
+          },
+          error(error) {
+            
+            console.log('Finished ERROR')
+            
+            return res.status(500).json({ 
+              ok: false,
+              error 
+            })
+          },
+          complete() {
+  
+            console.log('Finished SUCCESS')
+  
+            return res.status(200).json({
+              tests: table
+            })
+          },
+  
+      })
+    
+  // } catch (error) {
 
-        },
-        error(error) {
-          
-          console.log('Finished ERROR')
-          
-          return res.status(500).json({ 
-            ok: false,
-            error 
-          })
-        },
-        complete() {
-
-          console.log('Finished SUCCESS')
-
-          return res.status(200).json({
-            tests: table
-          })
-        },
-
-    })
+    // return res.status(500).json({ 
+    //   ok: false,
+    //   msg: 'prueba',
+    //   // error 
+    // })
+    
+  // }
+  
 }
 
 const getTestsSearch = async ( req, res ) => {
@@ -197,11 +214,10 @@ const getStations = async ( req, res ) => {
   const stations= []
   
   const query = `from(bucket: "calzeus")
-                    |> range(start: 2000-01-01)
-                    |> filter(fn: (r) => r._measurement == "tempower_test")
-                    |> group()
-                    |> distinct(column: "station") 
-                    |> keep(columns: ["_value"])
+                    |> range(start: 2020-01-01)
+                    |> filter(fn: (r) => r._measurement == "tempower_test" and r._field == "fr")
+                    |> first() |> group()
+                    |> distinct(column: "station")
                     |> sort(columns: ["_value"])
                     `
   
@@ -238,11 +254,10 @@ const getModels = async ( req, res ) => {
   const models= []
   
   const query = `from(bucket: "calzeus")
-                    |> range(start: 2000-01-01)
-                    |> filter(fn: (r) => r._measurement == "tempower_test")
-                    |> group()
-                    |> distinct(column: "model") 
-                    |> keep(columns: ["_value"])
+                    |> range(start: 2020-01-01)
+                    |> filter(fn: (r) => r._measurement == "tempower_test" and r._field == "fr")
+                    |> first() |> group()
+                    |> distinct(column: "model")
                     |> sort(columns: ["_value"])
                     `
   

@@ -8,7 +8,7 @@ const token = 'u4cjPA21M-rtywY_ey1ddrVluX7sXkoaAa1gKzARKhpJhW4nRbrtfhhLFhrxgmO3K
 const org = 'adriano'
 const bucket = 'calzeus'
 
-const client = new InfluxDB({url: 'http://ae-desk-006.adriano-e.com:8086', token: token})
+const client = new InfluxDB({url: 'http://devsrv003.adriano-e.com:8086', token: token})
 
 const queryApi = client.getQueryApi(org)
 
