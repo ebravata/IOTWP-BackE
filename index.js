@@ -8,6 +8,10 @@ const os = require('os');
 const bodyParser = require('body-parser');
 const app = express();
 
+process.env.TZ = "America/Mexico_city";
+
+console.log(new Date().toString());
+
 app.set('port', 3000);
 
 

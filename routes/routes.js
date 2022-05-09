@@ -5,8 +5,8 @@ const { getData, getTests, getStations, getModels, getTestsSearch } = require('.
 
 const router = Router();
 
-router.get('/calzeus/report/:ns/:start/:stop', getData);
-router.get('/calzeus/tests', getTests);
+router.get('/calzeus/report/:ns/:station/:model/:id/:rstart/:rstop', getData);
+router.get('/calzeus/tests/:rstart/:rstop', getTests);
 router.get('/calzeus/search/:station/:model/:serial/:rstart/:rstop', getTestsSearch);
 
 router.get('/calzeus/stations', getStations);

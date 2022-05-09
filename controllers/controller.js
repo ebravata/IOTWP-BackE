@@ -7,12 +7,12 @@ const queryApi = client.getQueryApi(org)
 
 const getData = async (req, res) => {
 
-  const sn= req.params.ns
-  const start= req.params.start
-  const stop= req.params.stop
-  // console.log( sn )
-  // console.log( start )
-  // console.log( stop )
+  const ns      =  req.params.ns
+  const station =  req.params.station
+  const model   =  req.params.model
+  const id      =  req.params.id
+  const rstart  =  req.params.rstart
+  const rstop   =  req.params.rstop
 
   const _2fr   = [],
         _2fz   = [],
@@ -26,16 +26,14 @@ const getData = async (req, res) => {
         _fr    = [],
         time   = []
 
-    const query = `from(bucket: "calzeus")
-                      |> range(start: ${ start }, stop: ${ stop })
-                      |> filter(fn:(r) => r._measurement == "tempower_test")
-                      |> drop(columns: ["test_status"])
-                      |> filter(fn: (r) => r.serial_number == "${ sn }")
-                      |> group(columns: ["_time"])
-                      |> sort(columns: ["_time"])
-                      |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-                      `
-                      // |> filter(fn: (r) => r.station == "620" and r.model == "MSS25C4MGW06" and r.serial_number == "HRA0899563")
+const query = `from (bucket: "calzeus")
+                  |> range(start: ${ rstart }, stop: ${ rstop })
+                  |> filter(fn:(r) => r._measurement == "tempower_test")
+                  |> filter(fn: (r) => r.station == "${ station  }" and r.model == "${ model }" and r.serial_number == "${ ns }" and r.uid == "${ id }")
+                  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+              `
+
+              console.log( query )
     await queryApi.queryRows(query, {
         next(row, tableMeta) {
             const result = tableMeta.toObject(row)
@@ -85,32 +83,39 @@ const getData = async (req, res) => {
 
 const getTests = async ( req, res ) => {
   const table= []
+  const rstart= req.params.rstart
+  const rstop= req.params.rstop
 
-  const today= new Date();
+  const query = `
+                import "strings"
 
-  console.log(today);
+                uid_to_time = (uid) => {
+                    ll_dtime = strings.split(v: uid, t: "-")
+                
+                    yyt = strings.substring(v: ll_dtime[0], start: 0, end: 4)
+                    mnt = strings.substring(v: ll_dtime[0], start: 4, end: 6)
+                    ddt = strings.substring(v: ll_dtime[0], start: 6, end: 8)
+                
+                    hht = strings.substring(v: ll_dtime[1], start: 0, end: 2)
+                    mmt = strings.substring(v: ll_dtime[1], start: 2, end: 4)
+                    sst = strings.substring(v: ll_dtime[1], start: 4, end: 6)
+                
+                    ddate = strings.joinStr(arr: [yyt, mnt, ddt], v: "-")
+                    ttime = strings.joinStr(arr: [hht, mmt, sst], v: ":")
+                    date_time = ddate +"T"+ ttime +"Z"
+
+                    return time(v: date_time )
+                }
   
-  
-  const query = `tb_first = from(bucket: "calzeus")
-                          |> range(start: 2021-12-10T23:59:59Z, stop: now())
-                          |> filter(fn: (r) => r._measurement == "tempower_test")
-                          |> group(columns: ["serial_number", "model", "station"])
-                          |> first() // use _value
-                          |> duplicate(column: "_time", as: "range_start")
-                          |> keep(columns: ["serial_number", "model", "station", "range_start"])
-                          
-                          tb_last = from(bucket: "calzeus")
-                          |> range(start: 2021-12-10T23:59:59Z, stop: now())
-                          |> filter(fn: (r) => r._measurement == "tempower_test")
-                          |> group(columns: ["serial_number", "model", "station"])
-                          |> last()
-                          |> duplicate(column: "_time", as: "range_stop") 
-                          |> keep(columns: ["serial_number", "model", "station", "range_stop"])
-                          
-                          join(tables: {key1: tb_last, key2: tb_first}, on: ["serial_number", "model", "station"], method: "inner")
+  from(bucket: "calzeus")
+                    |> range(start: ${ rstart }, stop: ${ rstop })
+                    |> filter(fn: (r) => r._measurement == "tempower_test" and r._field == "fr")
+                    |> first(column: "_time")
+                    |> map(fn: (r) => ({ r with range_start: uid_to_time(uid: r.uid) }))
+                    |> filter(fn: (r) => ( r.range_start >= ${ rstart }T23:59:59Z ))
+                    |> keep(columns: ["range_start", "uid", "serial_number", "model", "station"])
+                    |> group() |> sort(columns: ["range_start"])
                     `
-  // try {
-
     await queryApi.queryRows(query, {
       next(row, tableMeta) {
      
@@ -138,16 +143,6 @@ const getTests = async ( req, res ) => {
   
       })
     
-  // } catch (error) {
-
-    // return res.status(500).json({ 
-    //   ok: false,
-    //   msg: 'prueba',
-    //   // error 
-    // })
-    
-  // }
-  
 }
 
 const getTestsSearch = async ( req, res ) => {
@@ -161,26 +156,6 @@ const getTestsSearch = async ( req, res ) => {
   const table= []
   
   const query = queryBuilder(station, model, serial,rstart,rstop)
-  // const query = `tb_first = from(bucket: "calzeus")
-  //                         |> range(start: 2000-01-01)
-  //                         |> filter(fn: (r) => r._measurement == "tempower_test")
-  //                         |> group(columns: ["serial_number", "model", "station"])
-  //                         |> first() // use _value
-  //                         |> duplicate(column: "_time", as: "range_start")
-  //                         |> keep(columns: ["serial_number", "model", "station", "range_start"])
-                          
-  //                 tb_last = from(bucket: "calzeus")
-  //                         |> range(start: 2000-01-01)
-  //                         |> filter(fn: (r) => r._measurement == "tempower_test")
-  //                         |> group(columns: ["serial_number", "model", "station"])
-  //                         |> last()
-  //                         |> duplicate(column: "_time", as: "range_stop") 
-  //                         |> keep(columns: ["serial_number", "model", "station", "range_stop"])
-                          
-  //                         join(tables: {key1: tb_last, key2: tb_first}, on: ["serial_number", "model", "station"], method: "inner")
-  //                         |> filter(fn: (r) => r.station == "600")
-  //                   `
-  // console.log(query)
 
   await queryApi.queryRows(query, {
     next(row, tableMeta) {
