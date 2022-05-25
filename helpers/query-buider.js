@@ -59,12 +59,7 @@ const queryBuilder= (station, model, serial, range_start, range_stop)=>{
     if (serial!='no-serial')
         query1 += `|> filter(fn: (r) => r.serial_number == "${ serial }")`
 
-
-        // query1 += `|> sort(columns: ["_range_start"])`
-    
-    
-
-        console.log(query1)
+        // console.log(query1)
 
     return query1
 }
